@@ -25,7 +25,7 @@ app.get("/", (req, res) => {
 app.use("/api", routes);
 
 // Levantar servidor
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 Servidor escuchando en http://localhost:${PORT}`);
 });
