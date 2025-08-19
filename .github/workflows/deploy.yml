@@ -52,20 +52,16 @@ jobs:
 
       - name: 🚀 Create .env file
         run: |
-          ssh -p "${{ secrets.DO_SSH_PORT }}" "${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SSH_HOST }}" "
-            cd ${DEPLOY_PATH}
-            cat > .env << 'EOF'
-          PORT=${{ secrets.PORT }}
-          MONGO_URI="mongodb://${{ secrets.MONGO_INITDB_ROOT_USERNAME }}:${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}@mongodb:27017/${{ secrets.MONGO_DB_NAME }}?authSource=admin"
-          JWT_SECRET=${{ secrets.JWT_SECRET }}
-          MONGO_INITDB_ROOT_USERNAME=${{ secrets.MONGO_INITDB_ROOT_USERNAME }}
-          MONGO_INITDB_ROOT_PASSWORD=${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}
-          MONGO_DB_NAME=${{ secrets.MONGO_DB_NAME }}
-          EOF
-            chmod 600 .env
-            echo '✅ Archivo .env creado exitosamente'
-            cat .env
-          "                  
+          # Crear archivo .env línea por línea para evitar problemas con heredoc
+          ssh -p "${{ secrets.DO_SSH_PORT }}" "${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SSH_HOST }}" "cd ${DEPLOY_PATH} && rm -f .env"
+          ssh -p "${{ secrets.DO_SSH_PORT }}" "${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SSH_HOST }}" "cd ${DEPLOY_PATH} && echo 'PORT=${{ secrets.PORT }}' > .env"
+          ssh -p "${{ secrets.DO_SSH_PORT }}" "${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SSH_HOST }}" "cd ${DEPLOY_PATH} && echo 'MONGO_URI=mongodb://${{ secrets.MONGO_INITDB_ROOT_USERNAME }}:${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}@mongodb:27017/${{ secrets.MONGO_DB_NAME }}?authSource=admin' >> .env"
+          ssh -p "${{ secrets.DO_SSH_PORT }}" "${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SSH_HOST }}" "cd ${DEPLOY_PATH} && echo 'JWT_SECRET=${{ secrets.JWT_SECRET }}' >> .env"
+          ssh -p "${{ secrets.DO_SSH_PORT }}" "${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SSH_HOST }}" "cd ${DEPLOY_PATH} && echo 'MONGO_INITDB_ROOT_USERNAME=${{ secrets.MONGO_INITDB_ROOT_USERNAME }}' >> .env"
+          ssh -p "${{ secrets.DO_SSH_PORT }}" "${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SSH_HOST }}" "cd ${DEPLOY_PATH} && echo 'MONGO_INITDB_ROOT_PASSWORD=${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}' >> .env"
+          ssh -p "${{ secrets.DO_SSH_PORT }}" "${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SSH_HOST }}" "cd ${DEPLOY_PATH} && echo 'MONGO_DB_NAME=${{ secrets.MONGO_DB_NAME }}' >> .env"
+          ssh -p "${{ secrets.DO_SSH_PORT }}" "${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SSH_HOST }}" "cd ${DEPLOY_PATH} && chmod 600 .env"
+          ssh -p "${{ secrets.DO_SSH_PORT }}" "${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SSH_HOST }}" "cd ${DEPLOY_PATH} && echo '✅ Archivo .env creado exitosamente' && cat .env"             
 
       - name: 🚀 Deploy with Docker Compose
         run: |
