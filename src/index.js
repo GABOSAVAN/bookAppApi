@@ -16,6 +16,7 @@ const app = express();
 // Middlewares
 app.use(cors());
 app.use(express.json());
+app.set('trust proxy', 1);
 
 // Rutas de prueba
 app.get("/", (req, res) => {
