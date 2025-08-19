@@ -4,7 +4,7 @@ import cors from "cors";
 import connectDB from "./config/db.js";
 import routes from "./routes/index.js";
 
-// ...
+// ....
 
 dotenv.config();
 
