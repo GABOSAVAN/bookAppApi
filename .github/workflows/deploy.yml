@@ -52,14 +52,16 @@ jobs:
 
       - name: 🚀 Create .env file
         run: |
+
           ssh -p "${{ secrets.DO_SSH_PORT }}" "${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SSH_HOST }}" "mkdir -p ${DEPLOY_PATH}"
-          echo "PORT=${{ secrets.PORT }}
-          MONGO_URI="mongodb://${{ secrets.MONGO_INITDB_ROOT_USERNAME }}:${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}@mongodb:27017/${{ secrets.MONGO_DB_NAME }}?authSource=admin"
+          ssh -p "${{ secrets.DO_SSH_PORT }}" "${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SSH_HOST }}" "cat > ${DEPLOY_PATH}/.env << 'EOF'
+          PORT=${{ secrets.PORT }}
+          MONGO_URI=mongodb://${{ secrets.MONGO_INITDB_ROOT_USERNAME }}:${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}@mongodb:27017/${{ secrets.MONGO_DB_NAME }}?authSource=admin
           JWT_SECRET=${{ secrets.JWT_SECRET }}
           MONGO_INITDB_ROOT_USERNAME=${{ secrets.MONGO_INITDB_ROOT_USERNAME }}
           MONGO_INITDB_ROOT_PASSWORD=${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}
-          MONGO_DB_NAME=${{ secrets.MONGO_DB_NAME }}" | ssh -p "${{ secrets.DO_SSH_PORT }}" "${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SSH_HOST }}" "cat > ${DEPLOY_PATH}/.env && cd ${DEPLOY_PATH} && docker compose down || true && docker compose up -d --build"
-          ssh -p "${{ secrets.DO_SSH_PORT }}" "${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SSH_HOST }}" "chmod 600 ${DEPLOY_PATH}/.env"
+          MONGO_DB_NAME=${{ secrets.MONGO_DB_NAME }}
+          EOF"          
 
       - name: 🚀 Deploy with Docker Compose
         run: |
