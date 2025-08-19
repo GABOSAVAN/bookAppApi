@@ -54,7 +54,7 @@ jobs:
         run: |
           ssh -p "${{ secrets.DO_SSH_PORT }}" "${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SSH_HOST }}" "mkdir -p ${DEPLOY_PATH}"
           echo "PORT=${{ secrets.PORT }}
-          MONGO_URI=mongodb://${{ secrets.MONGO_INITDB_ROOT_USERNAME }}:${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}@mongodb:27017/${{ secrets.MONGO_DB_NAME }}?authSource=admin
+          MONGO_URI="mongodb://${{ secrets.MONGO_INITDB_ROOT_USERNAME }}:${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}@mongodb:27017/${{ secrets.MONGO_DB_NAME }}?authSource=admin"
           JWT_SECRET=${{ secrets.JWT_SECRET }}
           MONGO_INITDB_ROOT_USERNAME=${{ secrets.MONGO_INITDB_ROOT_USERNAME }}
           MONGO_INITDB_ROOT_PASSWORD=${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}
