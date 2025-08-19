@@ -13,4 +13,10 @@ const connectDB = async () => {
   }
 };
 
+process.on("SIGINT", async () => {
+  await mongoose.connection.close();
+  console.log("Conexión a BD cerrada por terminación del proceso");
+  process.exit(0);
+});
+
 export default connectDB;

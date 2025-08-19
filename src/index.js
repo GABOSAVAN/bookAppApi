@@ -30,3 +30,5 @@ app.listen(PORT, () => {
     console.log(`🚀 Servidor escuchando en http://localhost:${PORT}`);
 });
 
+//Solo para el droplet
+export default app;
