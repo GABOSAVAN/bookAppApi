@@ -55,7 +55,7 @@ jobs:
           # Crear archivo .env línea por línea para evitar problemas con heredoc
           ssh -p "${{ secrets.DO_SSH_PORT }}" "${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SSH_HOST }}" "cd ${DEPLOY_PATH} && rm -f .env"
           ssh -p "${{ secrets.DO_SSH_PORT }}" "${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SSH_HOST }}" "cd ${DEPLOY_PATH} && echo 'PORT=${{ secrets.PORT }}' > .env"
-          ssh -p "${{ secrets.DO_SSH_PORT }}" "${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SSH_HOST }}" "cd ${DEPLOY_PATH} && echo 'MONGO_URI=mongodb://${{ secrets.MONGO_INITDB_ROOT_USERNAME }}:${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}@mongodb:27017/${{ secrets.MONGO_DB_NAME }}?authSource=admin' >> .env"
+          ssh -p "${{ secrets.DO_SSH_PORT }}" "${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SSH_HOST }}" "cd ${DEPLOY_PATH} && echo 'MONGO_URI=mongodb://${{ secrets.MONGO_INITDB_ROOT_USERNAME }}:${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}@mongodb:27017/${{ secrets.MONGO_DB_NAME }}' >> .env"
           ssh -p "${{ secrets.DO_SSH_PORT }}" "${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SSH_HOST }}" "cd ${DEPLOY_PATH} && echo 'JWT_SECRET=${{ secrets.JWT_SECRET }}' >> .env"
           ssh -p "${{ secrets.DO_SSH_PORT }}" "${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SSH_HOST }}" "cd ${DEPLOY_PATH} && echo 'MONGO_INITDB_ROOT_USERNAME=${{ secrets.MONGO_INITDB_ROOT_USERNAME }}' >> .env"
           ssh -p "${{ secrets.DO_SSH_PORT }}" "${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SSH_HOST }}" "cd ${DEPLOY_PATH} && echo 'MONGO_INITDB_ROOT_PASSWORD=${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}' >> .env"
