@@ -20,4 +20,4 @@ COPY . .
 EXPOSE 3000
 
 # Comando de arranque (tu index.js escucha process.env.PORT || 3000)
-CMD ["node", "index.js"]
+CMD ["node", "src/index.js"]
