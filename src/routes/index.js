@@ -8,8 +8,6 @@ const router = Router();
 router.use('/user', userRoutes);
 router.use('/books', bookRoutes);
 
-
-
 // test middlewares
 // router.get("/testAuth", auth.authVerify,  testValidator);
 // router.use('/test', (req, res)=>{
