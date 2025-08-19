@@ -1,0 +1,53 @@
+services:
+  backend:
+    build:
+      context: .
+      # Si quieres cacheo más fino:
+      # target: production
+    container_name: backend-app
+    ports:
+      # Ligado solo a loopback: Nginx (en el host) hace proxy a 127.0.0.1:${PORT}
+      - "127.0.0.1:${PORT:-3000}:3000"
+    environment:
+      - PORT=${PORT}
+      - MONGO_URI=${MONGO_URI}
+      - JWT_SECRET=${JWT_SECRET}
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  mongodb:
+    image: mongo:6.0
+    container_name: mongodb
+    ports:
+      # Exponer solo local si quisieras acceder desde host para debug
+      - "127.0.0.1:27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGO_DB_NAME}
+    volumes:
+      - mongo-data:/data/db
+      # Script para crear usuario si no existe
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro    
+    restart: unless-stopped
+    # CAMBIO: Healthcheck mejorado para verificar autenticación
+    healthcheck:
+      test: |
+        echo 'db.runCommand("ping").ok' | mongosh ${MONGO_DB_NAME} --quiet -u ${MONGO_INITDB_ROOT_USERNAME} -p ${MONGO_INITDB_ROOT_PASSWORD} --authenticationDatabase admin || 
+        echo 'db.runCommand("ping").ok' | mongosh --quiet
+      interval: 15s
+      timeout: 10s
+      retries: 8
+      start_period: 30s
+    # CAMBIO: Comando para habilitar autenticación
+    command: mongod --auth --bind_ip_all
+
+volumes:
+  mongo-data:

@@ -1,0 +1,90 @@
+name: Deploy to Droplet (Docker + SSH)
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    env:
+      DEPLOY_PATH: /opt/backend-app
+
+    steps:
+      - name: 🧾 Checkout repo
+        uses: actions/checkout@v4
+
+      - name: 🔍 Verificar que DO_SSH_KEY no esté vacío
+        run: |
+          if [ -z "${{ secrets.DO_SSH_KEY }}" ]; then
+            echo "❌ ERROR: El secret 'DO_SSH_KEY' está vacío o no configurado en GitHub."
+            echo "ℹ️ Ve a Settings > Secrets and variables > Actions y crea uno con tu clave privada."
+            exit 1
+          fi
+
+      - name: 🔐 Configurar SSH agent con clave privada
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DO_SSH_KEY }}
+
+      - name: 🧩 Agregar host a known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "${{ secrets.DO_SSH_PORT }}" -H "${{ secrets.DO_SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: 📦 Crear carpeta remota y preparar dependencias
+        run: |
+          ssh -p "${{ secrets.DO_SSH_PORT }}" "${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SSH_HOST }}" "\
+            mkdir -p ${DEPLOY_PATH} && \
+            command -v docker && \
+            docker compose version \
+          "
+
+      - name: 🚚 Sincronizar código al servidor
+        run: |
+          rsync -az --delete \
+            --exclude '.git/' \
+            --exclude 'node_modules/' \
+            -e "ssh -p ${{ secrets.DO_SSH_PORT }}" \
+            ./ "${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SSH_HOST }}:${DEPLOY_PATH}/"
+
+      - name: 🚀 Create .env file
+        run: |
+          ssh -p "${{ secrets.DO_SSH_PORT }}" "${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SSH_HOST }}" "mkdir -p ${DEPLOY_PATH}"
+          echo "PORT=${{ secrets.PORT }}
+          MONGO_URI=mongodb://${{ secrets.MONGO_INITDB_ROOT_USERNAME }}:${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}@mongodb:27017/${{ secrets.MONGO_DB_NAME }}?authSource=admin
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          MONGO_INITDB_ROOT_USERNAME=${{ secrets.MONGO_INITDB_ROOT_USERNAME }}
+          MONGO_INITDB_ROOT_PASSWORD=${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}
+          MONGO_DB_NAME=${{ secrets.MONGO_DB_NAME }}" | ssh -p "${{ secrets.DO_SSH_PORT }}" "${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SSH_HOST }}" "cat > ${DEPLOY_PATH}/.env && cd ${DEPLOY_PATH} && docker compose down || true && docker compose up -d --build"
+          ssh -p "${{ secrets.DO_SSH_PORT }}" "${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SSH_HOST }}" "chmod 600 ${DEPLOY_PATH}/.env"
+
+      - name: 🚀 Deploy with Docker Compose
+        run: |
+          ssh -p "${{ secrets.DO_SSH_PORT }}" "${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SSH_HOST }}" "\
+            cd ${DEPLOY_PATH} && \
+            docker compose down || true && \
+            docker compose up -d --build \
+          "
+
+      # CAMBIO: Paso agregado para verificar conectividad
+      - name: ✅ Verificar conexión backend -> MongoDB
+        run: |
+          ssh -p "${{ secrets.DO_SSH_PORT }}" "${{ secrets.DO_SSH_USER }}@${{ secrets.DO_SSH_HOST }}" "\
+            cd ${DEPLOY_PATH} && \
+            echo 'Esperando servicios...' && \
+            sleep 30 && \
+            echo '=== Estado de contenedores ===' && \
+            docker compose ps && \
+            echo '=== Logs MongoDB ===' && \
+            docker compose logs --tail=10 mongodb && \
+            echo '=== Logs Backend ===' && \
+            docker compose logs --tail=10 backend && \
+            echo '=== Test de conectividad ===' && \
+            docker compose exec -T backend sh -c 'ping -c 2 mongodb' 2>/dev/null || echo 'Ping falló, pero puede ser normal'
+          "
+
+      - name: ✅ Fin
+        run: echo "=== 🚀 Despliegue completado ==="

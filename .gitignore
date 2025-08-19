@@ -1,11 +1,6 @@
 
 /dist/
 
-.github/
-.github/workflows/deploy.yml
-
-deploy.yml
-
-
-Dockerfile
-docker-compose.yml
+node_modules
+.env.production
+.env
