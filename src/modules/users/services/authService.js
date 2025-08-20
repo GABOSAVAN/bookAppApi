@@ -7,7 +7,7 @@ export const registerUser = async ({ email, password }) => {
   if (userExists) throw new Error("El usuario ya existe");
 
   const user = await User.create({ email, password });
-  return { id: user._id, email: user.email, token: token.encode(user._id) };
+  return { user: {id: user._id, email: user.email}, token: token.encode(user._id) };
 };
 
 // Login de usuario
@@ -18,7 +18,7 @@ export const loginUser = async ({ email, password }) => {
   const isMatch = await user.comparePassword(password);
   if (!isMatch) throw new Error("Contraseña incorrecta");
 
-  return { id: user._id, email: user.email, token: token.encode(user._id) };
+  return { user: {id: user._id, email: user.email}, token: token.encode(user._id) };
 };
 
 export const authService = {
