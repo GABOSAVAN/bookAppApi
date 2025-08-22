@@ -8,6 +8,7 @@ import {
   updateLibraryBook,
   deleteLibraryBook,
   listLibrary,
+  getReviews,
   getCover,
 } from "../controllers/bookController.js";
 
@@ -25,6 +26,9 @@ router.get("/my-library", auth.authVerify, listLibrary);
 router.get("/my-library/:id", getLibraryBook);
 router.put("/my-library/:id", auth.setUser, updateLibraryBook);
 router.delete("/my-library/:id", deleteLibraryBook);
+
+//Reviews
+router.get("/review/:id", getReviews);
 
 // Portadas
 router.get("/library/front-cover/:cover_id", getCover);

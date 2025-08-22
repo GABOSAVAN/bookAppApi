@@ -168,20 +168,32 @@ export const getLibraryBook = async (req, res) => {
 // PUT /api/books/my-library/:id
 export const updateLibraryBook = async (req, res) => {
   try {
-    console.log("creando o actualizando review...");
     const { description, rating } = req.body;
     const userId = req.user;
-    const selectionId = req.params.id;
+    const bookId = req.params.id;
+    console.log("creando o actualizando review...", "bookId:  ", bookId, "userId:  ", userId);
 
     const review = await Review.findOneAndUpdate(
-      { selection_id: selectionId , user_id: userId},
+      { book_id: bookId , user_id: userId},
       { description, rating },
       { upsert: true, new: true }
     );
 
-    await Selection.findByIdAndUpdate(selectionId, { hasReview: true });
+    // await Selection.findByIdAndUpdate(selectionId, { hasReview: true });
 
     res.json(review);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+//GET reviews
+export const getReviews = async (req, res) => {
+  try {
+    const bookId = req.params.id;
+    console.log("get reviews...")
+    const revs = await Review.find({ book_id: bookId });
+    res.json(revs);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
