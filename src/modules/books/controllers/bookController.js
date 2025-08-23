@@ -146,6 +146,7 @@ export const addToLibrary = async (req, res) => {
     const selection = await Selection.create({
       user_id: userId,
       book_id: book._id,
+      createdAt: new Date() // Agrega la fecha de creación aquí
     });
 
     res.status(201).json({
@@ -239,7 +240,7 @@ export const listLibrary = async (req, res) => {
     }
 
     // Solo aplicar filtros si vienen
-    const selections = await Selection.find(matchObj).select("_id book_id");
+    const selections = await Selection.find(matchObj).select("_id book_id createdAt");
 
     if (!selections.length) return res.json([]);
 
@@ -248,6 +249,11 @@ export const listLibrary = async (req, res) => {
     const pipeline = [
       { $match: { _id: { $in: selectionIds } } },
 
+      {
+        $addFields: {
+          selectionCreatedAt: "$createdAt",
+        },
+      },
       // Join con Book
       {
         $lookup: {
@@ -315,6 +321,7 @@ export const listLibrary = async (req, res) => {
     pipeline.push({
       $project: {
         _id: 1,
+        createdAt: "$selectionCreatedAt", 
         book_id: {
           _id: "$book._id",
           title: "$book.title",
