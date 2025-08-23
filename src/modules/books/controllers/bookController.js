@@ -1,5 +1,6 @@
 import axios from "axios";
 import mongoose from "mongoose";
+import { Types } from "mongoose";
 import Book from "../models/bookModel.js";
 import Cover from "../models/coverModel.js";
 import Selection from "../models/selectionModel.js";
@@ -13,7 +14,6 @@ export const search = async (req, res) => {
   try {
     const { q } = req.query;
     const userId = req.user ? req.user : null;
-    console.log("userId:  ", req.user);
     const books = await searchBooks(q, userId);
 
     // Revisar si algún libro ya está en selection
@@ -66,9 +66,9 @@ export const lastSearch = async (req, res) => {
 // POST /api/books/my-library
 export const addToLibrary = async (req, res) => {
   try {
-    console.log("creando selection...", req.body);
     const { id: bookId } = req.body; // id de OpenLibrary
     const userId = req.user;
+    console.log("creando selection...", req.body, "userId", userId);
 
     // 1. Verificar si ya existe la selección
     const existingSelection = await Selection.findOne({
@@ -78,7 +78,10 @@ export const addToLibrary = async (req, res) => {
     if (existingSelection) {
       return res
         .status(200)
-        .json({ message: "El libro ya está en tu biblioteca" });
+        .json({ 
+          status:200,
+          message: "El libro ya está en tu biblioteca" 
+        });
     }
 
     // 2. Verificar si ya existe el Book en nuestra DB
@@ -145,10 +148,17 @@ export const addToLibrary = async (req, res) => {
       book_id: book._id,
     });
 
-    res.status(201).json({ book, selection });
+    res.status(201).json({
+      status:201,
+      message: "Libro agregado a seleccion",
+      book,
+      selection });
   } catch (error) {
     console.error("Error en addToLibrary:", error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      status:500,
+      message: error.message 
+    });
   }
 };
 
@@ -218,7 +228,7 @@ export const listLibrary = async (req, res) => {
     const userIdStr = req.user?.id || req.user;
     let userObjectId;
     try {
-      userObjectId = new mongoose.Types.ObjectId(userIdStr);
+      userObjectId = new Types.ObjectId(userIdStr);
     } catch {
       return res.status(400).json({ message: "Invalid user id" });
     }
@@ -248,6 +258,39 @@ export const listLibrary = async (req, res) => {
         },
       },
       { $unwind: "$book" },
+
+      // PASO AÑADIDO: Join con la colección de reseñas (Reviews)
+      {
+        $lookup: {
+          from: "reviews",
+          let: { bookId: "$book_id", userId: "$user_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$book_id", "$$bookId"] },
+                    { $eq: ["$user_id", "$$userId"] },
+                  ],
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                rating: 1,
+                description: 1,
+                createdAt: 1,
+              },
+            },
+          ],
+          as: "userReview",
+        },
+      },
+      // PASO AÑADIDO: Desenrollar el array de reseñas
+      {
+        $unwind: { path: "$userReview", preserveNullAndEmptyArrays: true },
+      },
     ];
 
     if (title || author) {
@@ -266,20 +309,28 @@ export const listLibrary = async (req, res) => {
         as: "book_cover",
       },
     });
-    pipeline.push({ $unwind: { path: "$book_cover", preserveNullAndEmptyArrays: true } });
+    pipeline.push({ $unwind: { path: "$book_cover", preserveNullAndEmptyArrays: true } });    
 
     // DTO final
     pipeline.push({
       $project: {
         _id: 1,
-        user_id: 1,
         book_id: {
           _id: "$book._id",
           title: "$book.title",
           author: "$book.author",
           publication_date: "$book.publication_date",
-          cover: "$book_cover._id",
+          coverUrl: {
+            // Usa $ifNull para verificar si _id de la portada existe
+            $ifNull: [
+              { $concat: ["/api/books/library/front-cover/", "$book_cover._id"] },
+              // Si es null, usa una URL de portada por defecto
+              null
+            ]
+          }
         },
+        // CAMBIO: Proyectar la reseña real del usuario
+        userReview: "$userReview",
       },
     });
 
